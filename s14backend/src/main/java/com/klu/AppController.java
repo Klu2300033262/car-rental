@@ -64,9 +64,13 @@ public class AppController {
         phone = formatPhone(phone); // consistently format
 
         String otp = otpService.generateOtp(phone);
+        
+        // PRINTING TO LOGS: Useful for testing if Twilio account is expired
+        System.out.println("DEBUG: OTP generated for " + phone + " is: " + otp);
+        
         smsService.sendSms(phone, "Your OTP is: " + otp);
 
-        return "OTP sent to " + phone;
+        return "OTP sent successfully. Check your phone (or backend logs if Twilio fails).";
     }
 
     @PostMapping("/verify-otp")
