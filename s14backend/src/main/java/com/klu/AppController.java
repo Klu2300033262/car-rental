@@ -70,7 +70,11 @@ public class AppController {
 
         String otp = otpService.generateOtp(phone);
         
+        System.out.println(">>> REQUESTED OTP FOR EMAIL: " + email);
+        System.out.println(">>> REQUESTED OTP FOR PHONE: " + phone);
+
         // 1. Send SMS via Twilio
+
         smsService.sendSms(phone, "Your OTP is: " + otp);
 
         // 2. Send Email via Gmail (if provided)
