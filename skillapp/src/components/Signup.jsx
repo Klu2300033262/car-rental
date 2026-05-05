@@ -5,17 +5,26 @@ import "./style.css";
 function Signup({ store }) {
     const [errorMsg, setErrorMsg] = useState("");
     const [successMsg, setSuccessMsg] = useState("");
+    const [showOtpField, setShowOtpField] = useState(false);
+    const [otp, setOtp] = useState("");
+    const [formData, setFormData] = useState({
+        name: "",
+        role: "2",
+        email: "",
+        phone: "",
+        password: ""
+    });
 
-    async function handleSignup(event) {
+    const handleInputChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    async function handleRequestOtp(event) {
         event.preventDefault();
         setErrorMsg("");
         setSuccessMsg("");
 
-        const name = document.getElementById("usrname").value.trim();
-        const role = document.getElementById("sel1").value;
-        const email = document.getElementById("usr").value.trim();
-        const phone = document.getElementById("phone").value.trim();
-        const password = document.getElementById("pwd").value;
+        const { name, role, email, phone, password } = formData;
 
         if (!name || !role || !email || !phone || !password) {
             setErrorMsg("All fields are required.");
@@ -40,60 +49,50 @@ function Signup({ store }) {
                 setErrorMsg("Account with this email already exists.");
                 return;
             }
-        } catch (err) {
-            setErrorMsg("Error checking existing users. Make sure backend is running.");
-            return;
-        }
 
-        try {
-            const otpResponse = await api.post(
-                "/send-otp",
-                { phone, email }
-            );
+            const otpResponse = await api.post("/send-otp", { phone, email });
 
-            // Simulation Layer: If we get the special success string, show OTP in alert
             if (typeof otpResponse.data === 'string' && otpResponse.data.startsWith("OTP_SENT_SUCCESS:")) {
                 const simulatedOtp = otpResponse.data.split(":")[1];
                 alert(`⚠️ SIMULATION MODE:\n\nIf SMS or Email did not arrive, use this code:\n${simulatedOtp}`);
             }
 
-            const otp = prompt("Enter the OTP sent to your phone or email:");
-            if (!otp) {
-                setErrorMsg("OTP is required to complete registration.");
-                return;
-            }
+            setShowOtpField(true);
+            setSuccessMsg("OTP sent to your phone and email!");
+        } catch (err) {
+            setErrorMsg("Failed to send OTP. Make sure backend is running.");
+        }
+    }
 
-            const verifyResponse = await api.post(
-                "/verify-otp",
-                { phone, otp }
-            );
-
-            if (verifyResponse.data !== "Verified") {
-                setErrorMsg("Invalid OTP. Signup cancelled.");
-                return;
-            }
-        } catch (error) {
-            setErrorMsg("OTP verification failed.");
+    async function handleFinalSignup() {
+        if (!otp) {
+            setErrorMsg("Please enter the OTP to verify.");
             return;
         }
 
         try {
-            await api.post(
-                "/user",
-                { name, role, email, phone, password }
-            );
+            const verifyResponse = await api.post("/verify-otp", { phone: formData.phone, otp });
+
+            if (verifyResponse.data !== "Verified") {
+                setErrorMsg("Invalid OTP. Verification failed.");
+                return;
+            }
+
+            // If verified, proceed to create user
+            await api.post("/user", formData);
             setSuccessMsg("Account created successfully! Redirecting...");
             setTimeout(() => {
                 if(store) store.dispatch({ type: "page", data: "Signin" });
             }, 1500);
-        } catch (err) {
-            setErrorMsg("Signup failed. Check console for details.");
+
+        } catch (error) {
+            setErrorMsg("Signup process failed. Check console.");
         }
     }
 
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '40px 0', backgroundColor: 'var(--bg-color)' }}>
-        <form 
+        <div 
           className="saas-panel fade-in" 
           style={{ 
             padding: '40px', 
@@ -106,8 +105,12 @@ function Signup({ store }) {
           }}
         >
             <div style={{ textAlign: 'center', marginBottom: '10px' }}>
-              <h2 style={{ fontFamily: 'var(--font-heading)', margin: 0, color: 'var(--text-main)', fontSize: '2rem', letterSpacing: '-0.02em' }}>Create Account</h2>
-              <p style={{ color: 'var(--text-muted)', margin: '8px 0 0 0' }}>Join Auto Elite to rent luxury vehicles</p>
+              <h2 style={{ fontFamily: 'var(--font-heading)', margin: 0, color: 'var(--text-main)', fontSize: '2rem', letterSpacing: '-0.02em' }}>
+                {showOtpField ? "Verify Account" : "Create Account"}
+              </h2>
+              <p style={{ color: 'var(--text-muted)', margin: '8px 0 0 0' }}>
+                {showOtpField ? "Check your email & phone for the code" : "Join Auto Elite to rent luxury vehicles"}
+              </p>
             </div>
 
             {errorMsg && (
@@ -122,48 +125,69 @@ function Signup({ store }) {
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '15px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-                  <label htmlFor="usrname" style={{ color: '#F8FAFC', fontWeight: 600, fontSize: '0.9rem' }}>Full Name *</label>
-                  <input type="text" id="usrname" required placeholder="John Doe" className="saas-input" />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-                  <label htmlFor="sel1" style={{ color: '#F8FAFC', fontWeight: 600, fontSize: '0.9rem' }}>Account Type *</label>
-                  <select id="sel1" required className="saas-input">
-                      <option value="2">User</option>
-                      <option value="1">Admin</option>
-                  </select>
-              </div>
-            </div>
+            {!showOtpField ? (
+                <>
+                    <div style={{ display: 'flex', gap: '15px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                            <label style={{ color: '#F8FAFC', fontWeight: 600, fontSize: '0.9rem' }}>Full Name *</label>
+                            <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="John Doe" className="saas-input" />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                            <label style={{ color: '#F8FAFC', fontWeight: 600, fontSize: '0.9rem' }}>Account Type *</label>
+                            <select name="role" value={formData.role} onChange={handleInputChange} className="saas-input">
+                                <option value="2">User</option>
+                                <option value="1">Admin</option>
+                            </select>
+                        </div>
+                    </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label htmlFor="usr" style={{ color: '#F8FAFC', fontWeight: 600, fontSize: '0.9rem' }}>Email Address *</label>
-                <input type="email" id="usr" required placeholder="name@gmail.com" className="saas-input" />
-            </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ color: '#F8FAFC', fontWeight: 600, fontSize: '0.9rem' }}>Email Address *</label>
+                        <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="name@gmail.com" className="saas-input" />
+                    </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label htmlFor="phone" style={{ color: '#F8FAFC', fontWeight: 600, fontSize: '0.9rem' }}>Phone Number *</label>
-                <input type="tel" id="phone" required placeholder="+1 234 567 8900" className="saas-input" />
-            </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ color: '#F8FAFC', fontWeight: 600, fontSize: '0.9rem' }}>Phone Number *</label>
+                        <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="+91 00000 00000" className="saas-input" />
+                    </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label htmlFor="pwd" style={{ color: '#F8FAFC', fontWeight: 600, fontSize: '0.9rem' }}>Password *</label>
-                <input type="password" id="pwd" required placeholder="••••••••" className="saas-input" />
-            </div>
-            
-            <button 
-              onClick={handleSignup} 
-              className="saas-btn-primary"
-              style={{ marginTop: '15px' }}
-            >
-              Sign Up
-            </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ color: '#F8FAFC', fontWeight: 600, fontSize: '0.9rem' }}>Password *</label>
+                        <input type="password" name="password" value={formData.password} onChange={handleInputChange} placeholder="••••••••" className="saas-input" />
+                    </div>
+                    
+                    <button onClick={handleRequestOtp} className="saas-btn-primary" style={{ marginTop: '15px' }}>
+                      Sign Up & Send Code
+                    </button>
+                </>
+            ) : (
+                <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'center' }}>
+                        <label style={{ color: '#F8FAFC', fontWeight: 600, fontSize: '1.1rem' }}>Enter 6-Digit OTP</label>
+                        <input 
+                            type="text" 
+                            maxLength="6" 
+                            value={otp} 
+                            onChange={(e) => setOtp(e.target.value)} 
+                            placeholder="000000" 
+                            className="saas-input" 
+                            style={{ textAlign: 'center', fontSize: '1.5rem', letterSpacing: '8px' }} 
+                        />
+                        <button onClick={handleFinalSignup} className="saas-btn-primary">
+                            Verify & Complete Registration
+                        </button>
+                        <button onClick={() => setShowOtpField(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                            ← Back to Details
+                        </button>
+                    </div>
+                </>
+            )}
 
             <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '0.95rem' }}>
               <span style={{ color: 'var(--text-muted)' }}>Already have an account? </span>
               <a href="#" onClick={(e) => { e.preventDefault(); if(store) store.dispatch({ type: "page", data: "Signin" }); }} style={{ fontWeight: '600' }}>Log in</a>
             </div>
-        </form>
+        </div>
       </div>
     );
 }
