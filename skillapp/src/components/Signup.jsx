@@ -35,6 +35,23 @@ function Signup({ store }) {
         }
 
         try {
+            // Check for existing users before sending OTP
+            const existing = await api.get("/users");
+            const isEmailDuplicate = existing.data.some(user => user.email === email);
+            const isPhoneDuplicate = existing.data.some(user => user.phone === phone);
+
+            if (isEmailDuplicate) {
+                setErrorMsg("An account with this email already exists.");
+                setIsSending(false);
+                return;
+            }
+
+            if (isPhoneDuplicate) {
+                setErrorMsg("This phone number is already registered.");
+                setIsSending(false);
+                return;
+            }
+
             // First, trigger the OTP on backend
             const otpResponse = await api.post("/send-otp", { phone, email });
 
