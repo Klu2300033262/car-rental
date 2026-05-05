@@ -107,6 +107,12 @@ public class AppController {
         return obj.updateUser(foundUser);
     }
 
+    @PostMapping("/delete-all-users")
+    public String deleteAllUsers() {
+        return obj.deleteAllUsers();
+    }
+
+
 
     // --- CARS ---
     @PostMapping("/car")

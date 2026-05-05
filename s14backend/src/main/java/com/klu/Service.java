@@ -119,7 +119,13 @@ public class Service {
         }
     }
 
+    public String deleteAllUsers() {
+        repo1.deleteAll();
+        return "All Users Deleted Successfully";
+    }
+
     public List<User> retrieveUsers() {
+
         return repo1.findAll();
     }    
 }
