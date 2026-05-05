@@ -1,0 +1,20 @@
+# Frontend Ignores
+skillapp/node_modules/
+skillapp/dist/
+skillapp/.env
+skillapp/.env.*
+
+# Backend Ignores
+s14backend/target/
+s14backend/.mvn/
+s14backend/*.log
+s14backend/.settings/
+s14backend/.classpath
+s14backend/.project
+
+# Generic
+.DS_Store
+*.swp
+*.log
+.vscode/
+.idea/
