@@ -1,30 +1,46 @@
 package com.klu.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import com.sendgrid.*;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 
 @Service
 public class EmailService {
 
-    @Autowired
-    private JavaMailSender mailSender;
+    @Value("${sendgrid.api.key}")
+    private String apiKey;
+
+    @Value("${sendgrid.from.email}")
+    private String fromEmail;
 
     @Async
     public void sendOtpEmail(String toEmail, String otp) {
+        Email from = new Email(fromEmail);
+        String subject = "Your Auto Elite Verification Code";
+        Email to = new Email(toEmail);
+        Content content = new Content("text/plain", 
+            "Welcome to Auto Elite Rentals!\n\n" +
+            "Your OTP for account verification is: " + otp + "\n\n" +
+            "This code will expire in 5 minutes.");
+        
+        Mail mail = new Mail(from, subject, to, content);
+
+        SendGrid sg = new SendGrid(apiKey);
+        Request request = new Request();
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom("autoeliterentals@gmail.com");
-            message.setTo(toEmail);
-            message.setSubject("Your Auto Elite Verification Code");
-            message.setText("Welcome to Auto Elite Rentals!\n\nYour OTP for account verification is: " + otp + "\n\nThis code will expire in 5 minutes.");
-            
-            mailSender.send(message);
-            System.out.println("Email sent successfully to " + toEmail);
-        } catch (Exception e) {
-            System.err.println("Failed to send email: " + e.getMessage());
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+            Response response = sg.api(request);
+            System.out.println("SendGrid Status: " + response.getStatusCode());
+        } catch (IOException ex) {
+            System.err.println("SendGrid failed: " + ex.getMessage());
         }
     }
 }
