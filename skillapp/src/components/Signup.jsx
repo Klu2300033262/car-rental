@@ -46,12 +46,18 @@ function Signup({ store }) {
         }
 
         try {
-            await api.post(
+            const otpResponse = await api.post(
                 "/send-otp",
-                { phone }
+                { phone, email }
             );
 
-            const otp = prompt("Enter the OTP sent to your phone:");
+            // Simulation Layer: If we get the special success string, show OTP in alert
+            if (typeof otpResponse.data === 'string' && otpResponse.data.startsWith("OTP_SENT_SUCCESS:")) {
+                const simulatedOtp = otpResponse.data.split(":")[1];
+                alert(`⚠️ SIMULATION MODE:\n\nIf SMS or Email did not arrive, use this code:\n${simulatedOtp}`);
+            }
+
+            const otp = prompt("Enter the OTP sent to your phone or email:");
             if (!otp) {
                 setErrorMsg("OTP is required to complete registration.");
                 return;

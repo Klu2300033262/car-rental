@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.klu.service.OtpService;
 import com.klu.service.TwilioSmsService;
+import com.klu.service.EmailService;
 
 @RestController
 @CrossOrigin // Allow frontend access
@@ -48,6 +49,9 @@ public class AppController {
         return obj.loginCheck(user);
     }
 
+    @Autowired
+    EmailService emailService;
+
     // --- OTP ---
     private String formatPhone(String phone) {
         if (!phone.startsWith("+")) {
@@ -59,18 +63,25 @@ public class AppController {
     @PostMapping("/send-otp")
     public String sendOtp(@RequestBody Map<String, String> payload) {
         String phone = payload.get("phone");
+        String email = payload.get("email");
         if (phone == null || phone.isEmpty()) return "Phone number required";
 
-        phone = formatPhone(phone); // consistently format
+        phone = formatPhone(phone); 
 
         String otp = otpService.generateOtp(phone);
         
-        // PRINTING TO LOGS: Useful for testing if Twilio account is expired
-        System.out.println("DEBUG: OTP generated for " + phone + " is: " + otp);
-        
+        // 1. Send SMS via Twilio
         smsService.sendSms(phone, "Your OTP is: " + otp);
 
-        return "OTP sent successfully. Check your phone (or backend logs if Twilio fails).";
+        // 2. Send Email via Gmail (if provided)
+        if (email != null && !email.isEmpty()) {
+            emailService.sendOtpEmail(email, otp);
+        }
+
+        System.out.println("DEBUG: OTP generated for " + phone + " is: " + otp);
+
+        // Returning the OTP in the success string so the frontend can "simulate" the popup
+        return "OTP_SENT_SUCCESS:" + otp;
     }
 
     @PostMapping("/verify-otp")
