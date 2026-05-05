@@ -88,11 +88,25 @@ public class AppController {
     public String verifyOtp(@RequestBody Map<String, String> payload) {
         String phone = payload.get("phone");
         String otp = payload.get("otp");
-        if (phone == null || otp == null) return "Invalid input";
-
-        phone = formatPhone(phone); // same formatting
-        return otpService.validateOtp(phone, otp) ? "Verified" : "Invalid OTP";
+        if (otpService.validateOtp(formatPhone(phone), otp)) {
+            return "Verified";
+        }
+        return "Invalid OTP";
     }
+
+    @PostMapping("/reset-password")
+    public String resetPassword(@RequestBody Map<String, String> payload) {
+        String email = payload.get("email");
+        String password = payload.get("password");
+        
+        User foundUser = obj.findUserByEmail(email);
+
+        if (foundUser == null) return "User not found";
+
+        foundUser.setPassword(cryp.encryptData(password));
+        return obj.updateUser(foundUser);
+    }
+
 
     // --- CARS ---
     @PostMapping("/car")

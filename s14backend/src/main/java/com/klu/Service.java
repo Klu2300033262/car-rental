@@ -24,6 +24,16 @@ public class Service {
         return "Inserted Successfully";
     }
 
+    public User findUserByEmail(String email) {
+        return repo1.findByEmail(email);
+    }
+
+    public String updateUser(User user) {
+        repo1.save(user);
+        return "Updated Successfully";
+    }
+
+
     public User loginCheck(User user) {
         User user2 = repo1.findByEmail(user.getEmail());
         if (user2 == null) {

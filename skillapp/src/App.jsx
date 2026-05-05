@@ -11,12 +11,14 @@ import Admin from './components/Admin'
 import AddCar from './components/AddCar'
 import Cartpage from './components/Cartpage'
 import Billing from './components/Billing'
+import ForgotPassword from './components/ForgotPassword'
 
 function App({ store }) {
   function Display() {
     switch (store.getState()) {
       case "Signin": return (<Signin store={store} />);
       case "Signup": return (<Signup store={store} />);
+      case "ForgotPassword": return (<ForgotPassword store={store} />);
       case "Cars":
         if (localStorage.getItem("role") === "1" || localStorage.getItem("role") === "2")
           return (<Cars store={store} />)

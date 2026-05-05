@@ -85,6 +85,10 @@ function Login({ store }) {
           />
         </div>
 
+        <div style={{ textAlign: 'right', marginTop: '-10px' }}>
+          <a href="#" onClick={(e) => { e.preventDefault(); store.dispatch({ type: "page", data: "ForgotPassword" }); }} style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Forgot password?</a>
+        </div>
+
         <button  
           onClick={Fun1} 
           className="saas-btn-primary"
@@ -97,6 +101,7 @@ function Login({ store }) {
           <span style={{ color: 'var(--text-muted)' }}>Don't have an account? </span>
           <a href="#" onClick={(e) => { e.preventDefault(); store.dispatch({ type: "page", data: "Signup" }); }} style={{ fontWeight: '600' }}>Sign up</a>
         </div>
+
       </form>
     </div>
   );
