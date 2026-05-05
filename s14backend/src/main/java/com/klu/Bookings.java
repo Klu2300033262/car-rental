@@ -6,7 +6,8 @@ import jakarta.persistence.Id;
 @Entity
 public class Bookings {
     @Id
-    private int pid; // Make this the primary key
+    @jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
+    private int pid;
 
     private String customer;
     private String car;

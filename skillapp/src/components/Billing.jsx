@@ -11,7 +11,8 @@ const Billing = ({ store }) => {
       for (let i = 0; i < cart.length; i++) {
         const item = cart[i];
         await api.post("/booking", {
-          pid: item.item.pid,
+          customer: localStorage.getItem("un") || "Guest",
+          car: item.item.pname,
           pname: item.item.pname,
           pcost: item.finalPrice || (item.item.pcost * item.qty),
           pimage: item.item.pimage,
