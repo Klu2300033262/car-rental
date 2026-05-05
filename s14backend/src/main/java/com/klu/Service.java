@@ -120,9 +120,11 @@ public class Service {
     }
 
     public String deleteAllUsers() {
+        repoBooking.deleteAll(); // Delete bookings first to avoid foreign key errors
         repo1.deleteAll();
-        return "All Users Deleted Successfully";
+        return "All Users and Bookings Deleted Successfully";
     }
+
 
     public List<User> retrieveUsers() {
 
